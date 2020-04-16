@@ -1,0 +1,70 @@
+#https://docs.microsoft.com/en-us/learn/modules/deploy-azure-functions/4-deploy-azure-function
+
+az login
+
+az configure --defaults group=learn-f4ff5031-a224-4fcf-a38b-bfcc1cd91c51 location=westeurope
+
+az account list-locations `
+  --query "[].{Name: name, DisplayName: displayName}" `
+  --output table
+
+
+
+$$resourceSuffix = Get-Random -Maximum 100
+$resourceSuffix = 'wbe'
+
+$resourceSuffix=$RANDOM
+
+$webName="tailspin-space-game-web-$resourceSuffix"
+$leaderboardName="tailspin-space-game-leaderboard-$resourceSuffix"
+$storageName="tailspinspacegame$resourceSuffix"
+
+$rgName='tailspin-space-game-rg'
+$planName='tailspin-space-game-asp'
+
+az group create --name $rgName
+
+az appservice plan create `
+  --name $planName `
+  --resource-group $rgName `
+  --sku B1
+
+ az webapp create `
+  --name $webName `
+  --resource-group $rgName `
+  --plan $planName
+
+#Azure Functions requires a storage account for deployment
+az storage account create `
+  --name $storageName `
+  --resource-group $rgName `
+  --sku Standard_LRS
+
+#create an Azure Function
+az functionapp create `
+  --name $leaderboardName `
+  --resource-group $rgName `
+  --storage-account $storageName `
+  --consumption-plan-location <region>
+
+#list the host name and state of the App Service instance
+az webapp list `
+  --resource-group $rgName `
+  --query "[].{hostName: defaultHostName, state: state}" `
+  --output table
+
+#list the host name and state of the Azure Functions instance
+az functionapp list `
+  --resource-group $rgName `
+  --query "[].{hostName: defaultHostName, state: state}" `
+  --output table
+
+#!TODO: Connect Azure Devops to Azure Resources using a new Azure service connection
+#!TODO: See last chapter 'Create  a  service connection' @ https://docs.microsoft.com/en-us/learn/modules/create-multi-stage-pipeline/3-set-up-environment
+#!TODO: I do NOT have an active subscription so I cant..
+#!TODO: But maybe this can be done abusing a learning path where app service is created?
+
+
+## azure cli CLEANUP resources:
+##az group delete --name tailspin-space-game-rg
+##az group list --output table
